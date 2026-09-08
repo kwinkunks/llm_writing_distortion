@@ -1,18 +1,8 @@
 # LLM Writing Distortion
  
-<div align="left" style="line-height: 1;">
-  <a href="" target="_blank">
-    <img alt="arXiv" src="https://img.shields.io/badge/arXiv-2506.07468-b31b1b?logo=arxiv&logoColor=white"/>
-  </a>
-  <a href="https://github.com/abdulhaim/llm_writing_distortion" target="_blank">
-    <img alt="GitHub" src="https://img.shields.io/badge/GitHub-llm--writing--distortion-181717?logo=github"/>
-  </a>
-</div>
+This repository is a modified fork of that accompanying the paper,  
+**How LLMs Distort Our Written Language** (2026) by Marwa Abdulhai, Isadora White, Yanming Wan, Ibrahim Qureshi, Joel Z. Leibo, Max Kleiman-Weiner, Natasha Jaques. [Link to abstract.](https://arxiv.org/abs/2603.18161)
 
-This repository accompanies the paper:  
-**[How LLMs Distort Our Written Language]()**  
-by *Marwa Abdulhai, Isadora White, Yanming Wan, Ibrahim Qureshi, Joel Z. Leibo, Max Kleiman-Weiner, Natasha Jaques.*
-  
 ---
  
 ## Overview
@@ -29,38 +19,68 @@ We study these effects across three evaluation settings:
  
 ```
 llm_writing_distortion/
-├── iclr_analysis/          # Diversity and homogenization analysis on ICLR co-writing data
-├── argrewrite_analysis/    # Analysis of LLM-assisted revisions on the ArgRewrite corpus
-├── ArgRewrite/             # ArgRewrite dataset files
-├── NRC-Emotion-Lexicon/    # NRC Emotion Lexicon for sentiment and emotion scoring
-├── human_evaluation/       # Human evaluation data and analysis notebooks
-├── requirements.txt
+├── data/                       # All datasets and derived/generated artifacts
+│   ├── ArgRewrite/             # ArgRewrite-v2 dataset (essays, feedback, annotations)
+│   ├── NRC-Emotion-Lexicon/    # NRC Emotion Lexicon for sentiment/emotion scoring
+│   ├── llm_drafts/<model>/     # LLM-generated revised drafts (reused, per model/mode)
+│   ├── derived/                # Aggregated tables (e.g. dataframe_essays_llm_model.csv), LIWC-22.csv
+│   └── iclr/                   # ICLR analysis outputs (strengths/weaknesses CSVs, figures)
+├── notebooks/
+│   ├── argrewrite/             # ArgRewrite analysis notebooks (semantic, emotions, JSD, POS, ...)
+│   └── iclr/                   # ICLR peer-review analysis notebook
+├── scripts/                    # (placeholder for reusable Python scripts)
+├── pyproject.toml              # uv project (Python 3.13)
+├── uv.lock
 └── README.md
 ```
+
+> **Note (this fork):** the repo was reorganized into `data/` + `notebooks/`, and the
+> model backend was migrated from Google Gemini to a **Microsoft Azure AI Foundry**
+> endpoint. So far the **ArgRewrite semantic-shift** analysis
+> (`notebooks/argrewrite/LLM Homogenization - semantic.ipynb`) has been ported and
+> reproduced; the other notebooks still use the original paths/backends and need the
+> same treatment.
  
 ---
  
 ## Quick Start
  
 ### Installation
- 
-We recommend setting up a clean conda environment:
- 
+
+This fork uses [uv](https://docs.astral.sh/uv/) (Python 3.13):
+
 ```bash
-git clone https://github.com/abdulhaim/llm_writing_distortion
-cd llm_writing_distortion
-conda create --name writing_distortion python=3.10
-conda activate writing_distortion
-pip install -r requirements.txt
+uv sync
 ```
- 
+
+### Model backend (Azure AI Foundry)
+
+Embeddings (and, later, draft generation) run against an Azure AI Foundry endpoint.
+Create a `.env` file at the repo root (gitignored) with:
+
+```bash
+AZURE_OPENAI_ENDPOINT=https://<resource>.openai.azure.com/openai/v1
+AZURE_OPENAI_API_KEY=<your-key>
+AZURE_EMBEDDING_DEPLOYMENT=text-embedding-3-large   # or text-embedding-3-small
+```
+
+The endpoint uses the new `/openai/v1` API surface, so the notebooks talk to it with
+the standard `openai` `OpenAI` client (`base_url=<endpoint>`), not `AzureOpenAI`.
+
 ### Running the Analysis
- 
-Each subdirectory contains Jupyter notebooks that can be run independently:
- 
-- **`human_evaluation/`** — Open the notebook to inspect human evaluation results comparing human-written and LLM-assisted writing samples.
-- **`argrewrite_analysis/`** — Open the notebook to analyze content and emotional shifts across revision stages in the ArgRewrite corpus.
-- **`iclr_analysis/`** — Open the notebook to reproduce diversity metrics (lexical and semantic homogenization scores) across writing conditions from the ICLR 2024 study.
+
+```bash
+uv run jupyter lab      # then open a notebook under notebooks/
+```
+
+- **`notebooks/argrewrite/LLM Homogenization - semantic.ipynb`** — reproduces the
+  semantic-shift result: embeds ArgRewrite drafts, fits a shared 2-component PCA per
+  `(model, feedback)` panel, and reports **Avg Shift** (mean Euclidean D1→D2 / D1→AI
+  displacement). Set `emb_label = "Azure"` for Foundry embeddings or `"MiniLM-L6"` for
+  the offline local `all-MiniLM-L6-v2` backbone.
+- **`notebooks/argrewrite/`** — sibling notebooks for emotion (NRC), lexical (JSD), and
+  POS shifts *(not yet ported to the new layout/backend)*.
+- **`notebooks/iclr/`** — ICLR peer-review strengths/weaknesses analysis *(not yet ported)*.
 
  
 ---
@@ -81,19 +101,6 @@ Peer reviews from ICLR 2026, with LLM-generation labels from the [Pangram AI cla
 
 ---
  
-## Dependencies
- 
-```
-pandas
-numpy
-matplotlib
-scikit-learn
-sentence_transformers
-```
- 
----
- 
 ## Citation
  
 If you use this code or build on this analysis, please cite the associated work. 
-  
