@@ -1,0 +1,10 @@
+.venv
+.env
+.vscode
+
+_arXiv*
+
+.DS_Store
+.ipynb_checkpoints
+__pycache__/
+*.pyc
